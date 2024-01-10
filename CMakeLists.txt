@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_INSTALL_RPATH $ORIGIN)
 set(CMAKE_BUILD_RPATH "$ORIGIN;$ORIGIN/pinocchio;$ORIGIN/rbdl;$ORIGIN/ros")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 find_package(urdf REQUIRED)
 find_package(srdfdom REQUIRED)
@@ -19,6 +20,7 @@ find_package(Eigen3 REQUIRED)
 include(GNUInstallDirs)
 
 include_directories(include/
+    external/fmt-10.2.1/include
     ${srdfdom_INCLUDE_DIRS})
 
 add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
