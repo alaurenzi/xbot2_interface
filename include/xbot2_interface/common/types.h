@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <chrono>
+#include <unordered_map>
 
 #include <Eigen/Dense>
 
@@ -64,6 +65,8 @@ struct XBOT2IFC_API JointInfo
 
     std::pair<int, int> iqv() const;
     std::pair<int, int> nqv() const;
+    std::pair<int, int> inq() const;
+    std::pair<int, int> inv() const;
 
     JointInfo();
 };

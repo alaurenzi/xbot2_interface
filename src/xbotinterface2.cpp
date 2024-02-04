@@ -36,11 +36,44 @@ XBotInterface::XBotInterface(std::shared_ptr<Impl> _impl):
 
 }
 
+std::ostream &XBotInterface::print(std::ostream &os) const
+{
+    os << "model name: " << getName() << "\n";
+    os << "n_joints:   " << getJointNum() << "\n";
+    os << "n_q:        " << getNq() << "\n";
+    os << "n_v:        " << getNv() << "\n";
+
+    os << "\n";
+
+    os << "joints: \n";
+
+    for(auto j : getJoints())
+    {
+        auto jinfo = j->getJointInfo();
+
+        os << fmt::format(" - {:<25}: iq = {}\tiv = {}\tnq = {}\tnv = {} \n",
+                          j->getName(), jinfo.iq, jinfo.iv, jinfo.nq, jinfo.nv);
+    }
+
+    os << "\n";
+
+    os << "model mass: " << getMass() << " kg\n\n";
+
+    os << "q_neutral: " << getNeutralQ().transpose().format(2) << "\n";
+
+    return os;
+}
+
 ModelInterface::UniquePtr ModelInterface::getModel(ConfigOptions opt)
 {
     std::string type = "pin";
 
     opt.get_parameter("model_type", type);
+
+    if(const char * model_type_env = getenv("XBOT2IFC_MODEL_TYPE"))
+    {
+        type = model_type_env;
+    }
 
     auto mdl = CallFunction<ModelInterface*>("libmodelinterface2_" + type + ".so",
                                               "xbot2_create_model_plugin_" + type,
@@ -193,7 +226,12 @@ ModelInterface::UniquePtr ModelInterface::generateReducedModel(
     urdf->initString(Utils::urdfToString(*getUrdf()));
 
     // note: not a deep copy
-    auto srdf = std::make_shared<srdf::Model>(*getSrdf());
+    srdf::ModelSharedPtr srdf;
+
+    if(getSrdf())
+    {
+        srdf = std::make_shared<srdf::Model>(*getSrdf());
+    }
 
     for(auto jname : joints_to_fix)
     {
@@ -263,6 +301,7 @@ void ModelInterface::setJointPositionMinimal(const JointNameMap &qmap)
     mapToV(qmap, impl->_tmp.v);
 
     setJointPositionMinimal(impl->_tmp.v);
+
 }
 
 const std::string& XBotInterface::getName() const
@@ -398,6 +437,12 @@ const std::vector<ModelJoint::Ptr> &ModelInterface::getJoints()
 const std::vector<ModelJoint::ConstPtr> &ModelInterface::getJoints() const
 {
     return impl->_joints_mdl_const;
+}
+
+void ModelInterface::integrateJointPosition(VecConstRef v)
+{
+    sum(getJointPosition(), v, impl->_tmp.q);
+    setJointPosition(impl->_tmp.q);
 }
 
 bool XBot::v2::ModelInterface::getFloatingBasePose(Eigen::Affine3d &w_T_b) const
@@ -856,6 +901,12 @@ void XBotInterface::getJointPositionMinimal(Eigen::VectorXd &q) const
     positionToMinimal(getJointPosition(), q);
 }
 
+void XBotInterface::getJointPositionMinimal(JointNameMap &q) const
+{
+    getJointPositionMinimal(impl->_tmp.v);
+    vToMap(impl->_tmp.v, q);
+}
+
 Eigen::VectorXd XBotInterface::getJointPositionMinimal() const
 {
     Eigen::VectorXd ret;
@@ -883,6 +934,14 @@ void XBotInterface::minimalToPosition(VecConstRef q_minimal, Eigen::VectorXd &q)
     minimalToPosition(q_minimal, VecRef(q));
 }
 
+void XBotInterface::minimalToPosition(const JointNameMap &q_minimal,
+                                      Eigen::VectorXd &q) const
+{
+    positionToMinimal(q, impl->_tmp.v);
+    mapToV(q_minimal, impl->_tmp.v);
+    minimalToPosition(impl->_tmp.v, q);
+}
+
 Eigen::VectorXd XBotInterface::minimalToPosition(VecConstRef q_minimal) const
 {
     Eigen::VectorXd ret;
@@ -900,6 +959,12 @@ void XBotInterface::positionToMinimal(VecConstRef q, VecRef q_minimal) const
         j->positionToMinimal(q.segment(j->getQIndex(), j->getNq()),
                              q_minimal.segment(j->getVIndex(), j->getNv()));
     }
+}
+
+void XBotInterface::positionToMinimal(VecConstRef q, JointNameMap &q_minimal) const
+{
+    positionToMinimal(q, impl->_tmp.v);
+    vToMap(impl->_tmp.v, q_minimal);
 }
 
 void XBotInterface::positionToMinimal(VecConstRef q,
@@ -2065,6 +2130,7 @@ void XBotInterface::Impl::Temporaries::setZero(int nq, int nv)
     J1 = J.setZero(6, nv);
     Jarg.setZero(6, nv);
     v.setZero(nv);
+    q.setZero(nq);
     M.setIdentity(nv, nv);
     ldlt.compute(M);
 }

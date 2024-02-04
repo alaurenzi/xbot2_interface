@@ -4,6 +4,7 @@
 #include <srdfdom/srdf_writer.h>
 #include <sstream>
 
+
 Eigen::Matrix3d XBot::Utils::rpyToRotationMatrix(Eigen::Ref<const Eigen::Vector3d> rpy)
 {
     Eigen::AngleAxisd rollAngle(rpy[0], Eigen::Vector3d::UnitX());
@@ -146,4 +147,12 @@ XBot::ControlMode::Type XBot::operator|(ControlMode::Type a, ControlMode::Type b
 XBot::ControlMode::Type XBot::operator&(ControlMode::Type a, ControlMode::Type b)
 {
     return static_cast<ControlMode::Type>(static_cast<int>(a) & static_cast<int>(b));
+}
+
+Eigen::Vector6d XBot::Utils::computePoseError(const Eigen::Affine3d &ref, const Eigen::Affine3d &actual)
+{
+    Eigen::Vector6d ret;
+    ret << ref.translation() - actual.translation(),
+        computeOrientationError(ref.linear(), actual.linear());
+    return ret;
 }

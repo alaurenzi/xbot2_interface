@@ -53,6 +53,8 @@ public:
 
     XBotInterface(XBotInterface&&) = default;
 
+    std::ostream& print(std::ostream& os) const;
+
     const std::string& getName() const;
 
     urdf::ModelConstSharedPtr getUrdf() const;
@@ -159,6 +161,8 @@ public:
 
     void getJointPositionMinimal(Eigen::VectorXd& q) const;
 
+    void getJointPositionMinimal(JointNameMap& qmap) const;
+
     Eigen::VectorXd getJointPositionMinimal() const;
 
     void minimalToPosition(VecConstRef q_minimal,
@@ -167,10 +171,16 @@ public:
     void minimalToPosition(VecConstRef q_minimal,
                            Eigen::VectorXd& q) const;
 
+    void minimalToPosition(const JointNameMap& q_minimal,
+                           Eigen::VectorXd& q) const;
+
     Eigen::VectorXd minimalToPosition(VecConstRef q_minimal) const;
 
     void positionToMinimal(VecConstRef q,
                            VecRef q_minimal) const;
+
+    void positionToMinimal(VecConstRef q,
+                           JointNameMap& q_minimal) const;
 
     void positionToMinimal(VecConstRef q,
                            Eigen::VectorXd& q_minimal) const;
@@ -504,6 +514,9 @@ public:
     const std::vector<ModelJoint::Ptr>& getJoints();
 
     const std::vector<ModelJoint::ConstPtr>& getJoints() const;
+
+    /* */
+    void integrateJointPosition(VecConstRef v);
 
     /* Floating base */
 

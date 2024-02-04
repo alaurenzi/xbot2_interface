@@ -8,7 +8,26 @@ and therefore the number of joints is
 in general different than the number of element in the `q` vector, 
 which is also different than the number of elements in the `v` vector.
 
+
+
 ## Quick guide
+
+### Build the library
+
+After installing the required dependencies (TBD)
+
+```c++
+mkdir build && cd build
+cmake ..
+make
+make install
+```
+
+### Use the library in your project
+```cmake
+find_package(xbot2_interface REQUIRED)
+target_link_libraries(mytarget xbot2_interface::xbot2_interface)
+```
 
 ### Model object construction
 ```c++
@@ -80,7 +99,6 @@ auto vj_1 = joint->getJointVelocity(); // same as vj
 ```
 
 
-
 ### Using the model to perform computations
 ```c++
 // every time you change the model state, 
@@ -104,7 +122,11 @@ if(!model->getJacobian("my_link", J))
 {
     std::cerr << "error: bad link name \n";
 }
-
-
 ```
 
+
+### Examples
+Check [this small collection](examples) of commented examples
+
+### Porting from XBotInterface v1
+Check [the cheatsheet](cheatsheet.md)
